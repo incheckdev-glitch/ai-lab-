@@ -15,6 +15,23 @@ If the location or date cannot be established, summarize what can be identified 
 QA ANALYSIS PRIORITY
 Review individual checklist answers, measurements, comments, tags and corrective-action evidence FIRST.
 
+EVIDENCE THRESHOLD
+Do not report a finding merely because a field is blank, unusual, partially completed, late, unsigned, labelled "Submitted", or formatted unexpectedly.
+A reported issue must satisfy at least one of these:
+- the answer itself explicitly indicates a failed control;
+- a recorded value is outside an explicit limit/range stated in the checklist;
+- a defect, hygiene problem, contamination concern, maintenance issue or traceability inconsistency is explicitly recorded;
+- a required corrective action is explicitly missing after a confirmed failure;
+- a material QA control contains no result at all, so that specific control cannot be verified.
+
+If a material control has no result, describe it only as "unverified" or "missing control evidence". Do NOT describe the underlying condition as failed.
+
+If the evidence is ambiguous, do not convert it into an issue. Omit it unless the ambiguity itself creates a material verification problem.
+
+Before reporting any numeric/temperature issue, calculate the sequence against the exact limit stated in that checklist. Do not infer failure from elapsed time or value order unless the stated limit is actually breached.
+
+Example: if a cooling rule says 60°C to 20°C within 2 hours, and the record shows 20°C reached within 2 hours, that stage is compliant even if a later final cooling time is recorded. Do not report a critical-limit failure unless the actual stated limit was breached.
+
 Prioritize, in this order:
 1. Direct failed or negative control answers that indicate an actual QA, food-safety, hygiene, operational or equipment problem.
 2. Explicit threshold or critical-limit exceptions, abnormal measurements, or values outside the stated acceptable range.
@@ -58,7 +75,9 @@ MEDIUM: substantive issue requiring manager or QA follow-up.
 HIGH: significant food-safety, hygiene, traceability, equipment or operational-control issue; repeated substantive failure; critical-limit exception; or important failure without corrective-action evidence.
 NOT ASSESSED: insufficient evidence.
 
-Do not assign HIGH merely because a checklist is late, partially done, unsigned or administratively incomplete.
+Do not assign HIGH merely because a checklist is late, partially done, unsigned, administratively incomplete, or because one material control is unverified.
+Use HIGH only where the supplied evidence supports a significant substantive QA/food-safety/traceability/equipment failure, a breached critical limit, a repeated serious issue, or a confirmed failure without corrective-action evidence.
+An isolated missing material control record is normally MEDIUM unless the checklist itself establishes a higher severity.
 The rating is a management review priority, not proof of current legal or safety compliance.
 
 REFERENCES
@@ -118,6 +137,12 @@ Focus on:
 - traceability inconsistencies,
 - implausible or conflicting values requiring verification,
 - repeated substantive issues.
+
+EVIDENCE THRESHOLD
+Extract a candidate only when there is explicit adverse evidence or a genuinely unverified material QA control.
+Do not treat ambiguous formatting, a value such as "Submitted", or a blank administrative field as an issue.
+For numeric or temperature records, compare values and elapsed times to the explicit limits stated in that checklist before calling anything a failure.
+If a control has no result, classify it as missing control evidence only; do not claim the underlying condition failed.
 
 Do NOT extract workflow/admin observations by themselves, including:
 - Done On Time,
