@@ -29,34 +29,55 @@ function extractOutputText(payload: any): string {
   return parts.join("\n").trim();
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function estimateTokens(text: string) {
+  // Conservative estimate for mixed checklist/table text.
+  return Math.ceil(text.length / 3.3);
+}
+
 async function callOpenAI(instructions: string, inputText: string, maxOutputTokens = 3500) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured in Vercel.");
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-5.6-luna",
-      instructions,
-      input: inputText,
-      reasoning: { effort: "low" },
-      max_output_tokens: maxOutputTokens,
-    }),
-  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-5.6-luna",
+        instructions,
+        input: inputText,
+        reasoning: { effort: "low" },
+        max_output_tokens: maxOutputTokens,
+      }),
+    });
 
-  const payload = await response.json();
-  if (!response.ok) {
+    const payload = await response.json();
+
+    if (response.ok) {
+      const text = extractOutputText(payload);
+      if (!text) throw new Error("OpenAI returned an empty report.");
+      return text;
+    }
+
     console.error("OpenAI response error", payload);
+
+    if (response.status === 429 && attempt < 2) {
+      const retryAfter = Number(response.headers.get("retry-after") || "0");
+      await sleep(retryAfter > 0 ? retryAfter * 1000 : 20_000);
+      continue;
+    }
+
     throw new Error(payload?.error?.message || "OpenAI analysis request failed.");
   }
 
-  const text = extractOutputText(payload);
-  if (!text) throw new Error("OpenAI returned an empty report.");
-  return text;
+  throw new Error("OpenAI analysis request failed after retries.");
 }
 
 function recordBlock(record: ReportRecord, index: number) {
@@ -75,7 +96,7 @@ function recordBlock(record: ReportRecord, index: number) {
   ].join("\n");
 }
 
-function chunkBlocks(blocks: string[], maxChars = 2_700_000) {
+function chunkBlocks(blocks: string[], maxChars = 320_000) {
   const chunks: string[] = [];
   let current = "";
   for (const block of blocks) {
@@ -178,22 +199,39 @@ export async function POST(request: NextRequest) {
         3500,
       );
     } else {
-      const candidateNotes = await Promise.all(
-        chunks.map((chunk, index) =>
-          callOpenAI(
-            CHUNK_EXTRACTION_PROMPT,
-            `${contextHeader}\nEvidence chunk ${index + 1} of ${chunks.length}.\n\n${chunk}`,
-            5000,
-          ),
-        ),
-      );
+      // Large reports (for example BOS CPU) can exceed the model's TPM limit if
+      // chunk calls are launched together. Process chunks sequentially and pace
+      // request starts to stay comfortably below the 500k TPM organization cap.
+      const candidateNotes: string[] = [];
+      const targetTpm = 350_000;
+
+      for (let index = 0; index < chunks.length; index++) {
+        const chunkInput = `${contextHeader}\nEvidence chunk ${index + 1} of ${chunks.length}.\n\n${chunks[index]}`;
+        const requestStartedAt = Date.now();
+
+        const note = await callOpenAI(
+          CHUNK_EXTRACTION_PROMPT,
+          chunkInput,
+          3000,
+        );
+        candidateNotes.push(note);
+
+        if (index < chunks.length - 1) {
+          const estimatedRequestTokens = estimateTokens(chunkInput) + 3000;
+          const targetSpacingMs = Math.ceil((estimatedRequestTokens / targetTpm) * 60_000);
+          const elapsedMs = Date.now() - requestStartedAt;
+          if (elapsedMs < targetSpacingMs) {
+            await sleep(targetSpacingMs - elapsedMs);
+          }
+        }
+      }
 
       summary = await callOpenAI(
         LOCATION_REPORT_ANALYST_PROMPT,
         [
           contextHeader,
-          "The full source was too large for one request. The following evidence notes were extracted from disjoint source chunks. Treat them as evidence summaries, preserve only supported facts and references, and do not infer anything beyond them.",
-          ...candidateNotes.map((note, index) => `\n--- SOURCE CHUNK ${index + 1} DETAILED EVIDENCE DIGEST ---\n${note}`),
+          "The full source was too large for one request. The following issue-evidence notes were extracted from disjoint source chunks. Cross-check the notes against each other for hidden contradictions, repeated issues and conflicting standards. Preserve only supported facts and references.",
+          ...candidateNotes.map((note, index) => `\n--- SOURCE CHUNK ${index + 1} ISSUE EVIDENCE ---\n${note}`),
         ].join("\n\n"),
         3500,
       );
