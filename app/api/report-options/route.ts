@@ -16,9 +16,9 @@ export async function GET() {
         .order("report_date", { ascending: false }),
       supabase
         .from("ai_location_reports")
-        .select("id,client_name,location_name,report_date,priority,management_attention,generated_at")
+        .select("id,client_name,location_name,report_date,summary,priority,management_attention,model,record_count,generated_at")
         .order("generated_at", { ascending: false })
-        .limit(8),
+        .limit(30),
     ]);
 
     if (sourceError) throw sourceError;
