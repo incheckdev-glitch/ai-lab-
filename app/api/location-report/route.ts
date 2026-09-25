@@ -133,6 +133,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "The source exists, but it has no checklist records." }, { status: 404 });
     }
 
+    // Reports can contain duplicate "SL - ..." / "SL-..." checklist instances.
+    // Keep them stored for source fidelity, but never send them to the AI analyst.
+    const allRecords = records as ReportRecord[];
+    const analysisRecords = allRecords.filter(
+      (record) => !/^SL\s*-\s*/i.test(record.checklist_title.trim()),
+    );
+    const ignoredSlDuplicates = allRecords.length - analysisRecords.length;
+
+    if (!analysisRecords.length) {
+      return NextResponse.json(
+        { error: "All matching checklist records were SL-prefixed duplicates and were excluded from AI analysis." },
+        { status: 404 },
+      );
+    }
+
     const contextHeader = [
       "EXPLICIT REPORT REQUEST",
       `Client: ${client}`,
@@ -142,7 +157,7 @@ export async function POST(request: NextRequest) {
       "The database records below were extracted from the original report. [PDF PAGE N] markers are source page references.",
     ].join("\n");
 
-    const blocks = (records as ReportRecord[]).map(recordBlock);
+    const blocks = analysisRecords.map(recordBlock);
     const chunks = chunkBlocks(blocks);
     let summary: string;
 
@@ -193,7 +208,7 @@ export async function POST(request: NextRequest) {
         priority,
         management_attention: managementAttention,
         model,
-        record_count: records.length,
+        record_count: analysisRecords.length,
         source_ids: sourceIds,
       })
       .select("id,generated_at")
@@ -206,7 +221,8 @@ export async function POST(request: NextRequest) {
       priority,
       managementAttention,
       model,
-      recordCount: records.length,
+      recordCount: analysisRecords.length,
+      ignoredSlDuplicates,
       chunkCount: chunks.length,
       reportId: saved?.id,
       generatedAt: saved?.generated_at,
