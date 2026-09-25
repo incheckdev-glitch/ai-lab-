@@ -77,6 +77,7 @@ select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(21,87,213,.
 .recent-row:first-child { border-top: 0; }
 .recent-row div:first-child { display: grid; gap: 4px; }
 .recent-row span { color: var(--muted); font-size: 12px; }
+.saved-report-actions { display: flex; align-items: center; gap: 9px; }
 .priority { border-radius: 999px; padding: 5px 9px; font-size: 10px; font-weight: 850; background: #f1f3f6; color: var(--muted); white-space: nowrap; }
 .priority-high { color: var(--red); background: var(--red-soft); }
 .priority-medium { color: var(--amber); background: var(--amber-soft); }
