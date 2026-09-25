@@ -162,13 +162,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const reviewedTitles = Array.from(
+      new Set(analysisRecords.map((record) => record.checklist_title.trim())),
+    );
+
     const contextHeader = [
       "EXPLICIT REPORT REQUEST",
       `Client: ${client}`,
       `Location: ${location}`,
       `Requested reporting date: ${reportDate}`,
       `Source file(s): ${sources.map((source) => source.source_filename).join(", ")}`,
+      `Answered checklist instances supplied for QA review: ${analysisRecords.length}`,
+      `Distinct checklist titles supplied: ${reviewedTitles.length}`,
+      `Checklist titles in scope: ${reviewedTitles.join(" | ")}`,
       "The database records below were extracted from the original report. [PDF PAGE N] markers are source page references.",
+      "Review the complete supplied scope before finalizing. Do not stop after finding the first issue.",
     ].join("\n");
 
     const blocks = analysisRecords.map(recordBlock);
