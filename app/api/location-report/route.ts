@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
         [
           contextHeader,
           "The full source was too large for one request. The following evidence notes were extracted from disjoint source chunks. Treat them as evidence summaries, preserve only supported facts and references, and do not infer anything beyond them.",
-          ...candidateNotes.map((note, index) => `\n--- SOURCE CHUNK ${index + 1} ISSUE EVIDENCE ---\n${note}`),
+          ...candidateNotes.map((note, index) => `\n--- SOURCE CHUNK ${index + 1} DETAILED EVIDENCE DIGEST ---\n${note}`),
         ].join("\n\n"),
         6500,
       );
