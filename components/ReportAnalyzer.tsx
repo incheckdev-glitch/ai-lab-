@@ -152,7 +152,7 @@ export default function ReportAnalyzer() {
         <div className="section-kicker">DATABASE REPORT CHECK</div>
         <h1>AI Location Report</h1>
         <p className="lead">
-          Select a client, location and reporting date. The analyzer reads the stored checklist report records from Supabase and returns only the management issues that need attention.
+          Select a client, location and reporting date. The analyzer reads the stored checklist report records from Supabase and returns only substantive QA, food-safety, hygiene, equipment, traceability and control issues that need attention.
         </p>
 
         {loading ? (
@@ -191,7 +191,7 @@ export default function ReportAnalyzer() {
       <section className="panel report-card">
         <div className="report-head">
           <div>
-            <div className="section-kicker">MANAGEMENT SUMMARY</div>
+            <div className="section-kicker">QA MANAGEMENT SUMMARY</div>
             <h2>{summary ? location : "Ready for analysis"}</h2>
           </div>
           {summary && (
