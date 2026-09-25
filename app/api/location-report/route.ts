@@ -75,7 +75,7 @@ function recordBlock(record: ReportRecord, index: number) {
   ].join("\n");
 }
 
-function chunkBlocks(blocks: string[], maxChars = 600_000) {
+function chunkBlocks(blocks: string[], maxChars = 2_700_000) {
   const chunks: string[] = [];
   let current = "";
   for (const block of blocks) {
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
       summary = await callOpenAI(
         LOCATION_REPORT_ANALYST_PROMPT,
         `${contextHeader}\n\n${chunks[0]}`,
-        6500,
+        3500,
       );
     } else {
       const candidateNotes = await Promise.all(
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           callOpenAI(
             CHUNK_EXTRACTION_PROMPT,
             `${contextHeader}\nEvidence chunk ${index + 1} of ${chunks.length}.\n\n${chunk}`,
-            7000,
+            5000,
           ),
         ),
       );
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
           "The full source was too large for one request. The following evidence notes were extracted from disjoint source chunks. Treat them as evidence summaries, preserve only supported facts and references, and do not infer anything beyond them.",
           ...candidateNotes.map((note, index) => `\n--- SOURCE CHUNK ${index + 1} DETAILED EVIDENCE DIGEST ---\n${note}`),
         ].join("\n\n"),
-        6500,
+        3500,
       );
     }
 
