@@ -24,6 +24,114 @@ type RecentReport = {
   generated_at: string;
 };
 
+
+function renderInlineMarkdown(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function ReportDocument({ summary }: { summary: string }) {
+  const lines = summary.replace(/\r/g, "").split("\n");
+  const detailLabels = new Set([
+    "Client",
+    "Location",
+    "Reporting date",
+    "Scope",
+    "Provisional risk",
+    "Needs attention",
+    "Report accuracy",
+  ]);
+
+  const details: Array<{ label: string; value: string }> = [];
+  const contentLines: string[] = [];
+
+  for (const line of lines) {
+    const match = line.match(/^([^:]+):\s*(.*)$/);
+    if (match && detailLabels.has(match[1].trim())) {
+      details.push({ label: match[1].trim(), value: match[2].trim() });
+    } else {
+      contentLines.push(line);
+    }
+  }
+
+  let currentSection = "";
+  const rendered = contentLines.map((rawLine, index) => {
+    const line = rawLine.trim();
+    if (!line) return <div className="report-spacer" key={index} />;
+
+    if (line.startsWith("# ")) {
+      return <h1 className="document-title" key={index}>{line.slice(2)}</h1>;
+    }
+
+    if (line.startsWith("## ")) {
+      currentSection = line.slice(3).trim();
+      return <h2 className="document-section-title" key={index}>{currentSection}</h2>;
+    }
+
+    const numbered = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numbered) {
+      const isIssue = currentSection === "Material issues found" || currentSection === "Top issues";
+      return (
+        <div className={isIssue ? "report-numbered-item report-issue-item" : "report-numbered-item"} key={index}>
+          <span className="report-number">{numbered[1]}</span>
+          <div>{renderInlineMarkdown(numbered[2])}</div>
+        </div>
+      );
+    }
+
+    if (line.startsWith("- ")) {
+      const referenceItem = currentSection === "References";
+      return (
+        <div className={referenceItem ? "report-bullet-item report-reference-item" : "report-bullet-item"} key={index}>
+          <span className="report-bullet">•</span>
+          <div>{renderInlineMarkdown(line.slice(2))}</div>
+        </div>
+      );
+    }
+
+    return <p className="report-paragraph" key={index}>{renderInlineMarkdown(line)}</p>;
+  });
+
+  return (
+    <article className="report-document">
+      <div className="document-brand-row">
+        <div className="document-brand-mark">I360</div>
+        <div>
+          <div className="document-brand-name">InCheck 360</div>
+          <div className="document-brand-subtitle">AI Location Issue Report</div>
+        </div>
+      </div>
+
+      {rendered.find((node) => node && typeof node === "object")}
+
+      {details.length > 0 && (
+        <div className="report-detail-grid">
+          {details.map((item) => {
+            const important = item.label === "Provisional risk" || item.label === "Needs attention";
+            return (
+              <div className={item.label === "Scope" || item.label === "Report accuracy" ? "report-detail full" : "report-detail"} key={item.label}>
+                <span>{item.label}</span>
+                <strong className={important ? "report-detail-value emphasized" : "report-detail-value"}>{item.value}</strong>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="report-content">
+        {rendered.filter((_, index) => {
+          const line = contentLines[index]?.trim() || "";
+          return !line.startsWith("# ");
+        })}
+      </div>
+    </article>
+  );
+}
+
 export default function ReportAnalyzer() {
   const [sources, setSources] = useState<SourceOption[]>([]);
   const [recent, setRecent] = useState<RecentReport[]>([]);
@@ -209,7 +317,7 @@ export default function ReportAnalyzer() {
           </div>
         ) : summary ? (
           <>
-            <pre className="report-output">{summary}</pre>
+            <ReportDocument summary={summary} />
             <div className="report-meta">
               <span>{meta.recordCount ?? 0} checklist instances reviewed</span>
               <span>{meta.model}</span>
