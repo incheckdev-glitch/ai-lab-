@@ -16,8 +16,11 @@ type RecentReport = {
   client_name: string;
   location_name: string;
   report_date: string;
+  summary?: string;
   priority: string;
   management_attention: string;
+  model?: string;
+  record_count?: number;
   generated_at: string;
 };
 
@@ -106,8 +109,11 @@ export default function ReportAnalyzer() {
           client_name: client,
           location_name: location,
           report_date: reportDate,
+          summary: payload.summary || "",
           priority: payload.priority,
           management_attention: payload.managementAttention,
+          model: payload.model,
+          record_count: payload.recordCount,
           generated_at: payload.generatedAt || new Date().toISOString(),
         },
         ...items,
@@ -117,6 +123,20 @@ export default function ReportAnalyzer() {
     } finally {
       setGenerating(false);
     }
+  }
+
+  function openSavedReport(item: RecentReport) {
+    setClient(item.client_name);
+    setLocation(item.location_name);
+    setReportDate(item.report_date);
+    setSummary(item.summary || "");
+    setMeta({
+      model: item.model,
+      recordCount: item.record_count,
+      generatedAt: item.generated_at,
+    });
+    setError("");
+    window.scrollTo({ top: 250, behavior: "smooth" });
   }
 
   async function copyReport() {
@@ -208,12 +228,18 @@ export default function ReportAnalyzer() {
 
       {recent.length > 0 && (
         <section className="panel recent-card no-print">
-          <div className="section-kicker">RECENT ANALYSES</div>
+          <div className="section-kicker">SAVED REPORTS</div>
           <div className="recent-list">
             {recent.map((item) => (
               <div className="recent-row" key={`${item.id}-${item.generated_at}`}>
-                <div><strong>{item.location_name}</strong><span>{item.client_name} · {item.report_date}</span></div>
-                <div className={`priority priority-${String(item.priority || "").toLowerCase().replaceAll(" ", "-")}`}>{item.priority}</div>
+                <div>
+                  <strong>{item.location_name}</strong>
+                  <span>{item.client_name} · {item.report_date} · {new Date(item.generated_at).toLocaleString()}</span>
+                </div>
+                <div className="saved-report-actions">
+                  <div className={`priority priority-${String(item.priority || "").toLowerCase().replaceAll(" ", "-")}`}>{item.priority}</div>
+                  <button className="button secondary small" onClick={() => openSavedReport(item)} disabled={!item.summary}>Open</button>
+                </div>
               </div>
             ))}
           </div>
