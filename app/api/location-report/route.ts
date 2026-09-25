@@ -59,6 +59,15 @@ async function callOpenAI(instructions: string, inputText: string, maxOutputToke
   return text;
 }
 
+function isPureBlankIncompleteRecord(record: ReportRecord) {
+  const status = (record.instance_status || "").trim().toLowerCase();
+  return (
+    status.includes("partially") &&
+    !record.completion_at_text?.trim() &&
+    !record.submitted_by?.trim()
+  );
+}
+
 function recordBlock(record: ReportRecord, index: number) {
   return [
     `--- DATABASE RECORD ${index + 1} ---`,
@@ -136,14 +145,19 @@ export async function POST(request: NextRequest) {
     // Reports can contain duplicate "SL - ..." / "SL-..." checklist instances.
     // Keep them stored for source fidelity, but never send them to the AI analyst.
     const allRecords = records as ReportRecord[];
-    const analysisRecords = allRecords.filter(
+    const nonSlRecords = allRecords.filter(
       (record) => !/^SL\s*-\s*/i.test(record.checklist_title.trim()),
     );
-    const ignoredSlDuplicates = allRecords.length - analysisRecords.length;
+    const ignoredSlDuplicates = allRecords.length - nonSlRecords.length;
+
+    const analysisRecords = nonSlRecords.filter(
+      (record) => !isPureBlankIncompleteRecord(record),
+    );
+    const ignoredBlankIncomplete = nonSlRecords.length - analysisRecords.length;
 
     if (!analysisRecords.length) {
       return NextResponse.json(
-        { error: "All matching checklist records were SL-prefixed duplicates and were excluded from AI analysis." },
+        { error: "No answered checklist evidence remains after exclusions." },
         { status: 404 },
       );
     }
@@ -223,6 +237,7 @@ export async function POST(request: NextRequest) {
       model,
       recordCount: analysisRecords.length,
       ignoredSlDuplicates,
+      ignoredBlankIncomplete,
       chunkCount: chunks.length,
       reportId: saved?.id,
       generatedAt: saved?.generated_at,
