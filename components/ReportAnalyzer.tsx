@@ -191,7 +191,7 @@ export default function ReportAnalyzer() {
       <section className="panel report-card">
         <div className="report-head">
           <div>
-            <div className="section-kicker">DETAILED DAILY LOCATION REPORT</div>
+            <div className="section-kicker">DAILY LOCATION REPORT</div>
             <h2>{summary ? location : "Ready for analysis"}</h2>
           </div>
           {summary && (
