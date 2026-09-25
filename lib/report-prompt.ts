@@ -33,6 +33,16 @@ If the available completed/answered checklist evidence contains no direct advers
 
 COMPLETENESS CHECK
 Before writing the final answer, internally scan every answered checklist instance and every meaningful QA domain represented in the supplied data.
+
+CROSS-RECORD CONSISTENCY REVIEW
+Do not analyze each checklist in isolation only. Compare related controls across the supplied records for the same location/date.
+Specifically check whether:
+- one checklist states an acceptable limit/range that conflicts with values or "Optimal/Acceptable" tags in another checklist;
+- the same equipment/control uses materially different thresholds across records;
+- field labels and recorded answers do not semantically match (for example, a field asking for a procedure contains an equipment/location name instead);
+- repeated records contradict one another on the same control;
+- a corrective-action decision conflicts with an actual failed/out-of-limit result.
+When such a conflict is supported by the source, report it as a QA configuration/documentation inconsistency requiring verification. Do not call it a safety failure unless the evidence proves that.
 Do not stop after finding the first one or two issues.
 Look across all applicable areas such as temperature monitoring, cooking/reheating, cooling, receiving, storage, cleaning/hygiene, maintenance, oil quality, opening/closing controls, traceability, product condition and corrective actions.
 Capture minor but real QA issues as LOW when they are supported by evidence; do not suppress a valid issue merely to keep the report short.
@@ -105,7 +115,8 @@ Never invent page numbers.
 OUTPUT STYLE
 Keep the report concise but sufficiently complete to cover every supported QA issue.
 Typical target length: approximately 200–400 words per location when issues exist; shorter is acceptable when there are genuinely few or no issues.
-Report ONLY supported QA issues. Do not pad the report with normal findings or workflow commentary.
+Report ONLY supported QA issues in the findings section. Do not pad findings with normal results or workflow commentary.
+However, always include a compact QA coverage section after the findings so management can see which control areas were actually reviewed.
 
 Use this format:
 
@@ -119,9 +130,19 @@ Include every supported issue up to a maximum of 10 distinct issue entries.
 If more than 10 supported issues exist, group related findings so no major QA area is silently omitted.
 Order issues from highest to lowest QA importance.
 
-After the issue entries, include one short line:
-Reviewed scope: [briefly name the major checklist/QA areas actually reviewed from the supplied records].
-This scope line is for coverage assurance only; do not list normal results.
+After the issue entries, include:
+
+QA coverage reviewed
+- Temperature control: [Issue identified / No material exception identified]
+- Cooking/Reheating: [Issue identified / No material exception identified / Not represented]
+- Cooling: [Issue identified / No material exception identified / Not represented]
+- Receiving/Traceability: [Issue identified / No material exception identified / Not represented]
+- Hygiene/Cleaning: [Issue identified / No material exception identified / Not represented]
+- Maintenance/Equipment: [Issue identified / No material exception identified / Not represented]
+- Oil quality: [Issue identified / No material exception identified / Not represented]
+- Operational QA controls: [Issue identified / No material exception identified / Not represented]
+
+Keep each coverage line extremely short. Do not repeat normal readings or workflow timing.
 
 Priority: LOW / MEDIUM / HIGH / NOT ASSESSED
 Management attention: YES / NO IDENTIFIED NEED / UNABLE TO DETERMINE
@@ -132,6 +153,8 @@ References
 
 If no material QA issues are identified, write:
 No material QA issues identified within the reviewed checklist evidence.
+
+Still include the QA coverage reviewed section so the reader can confirm what was assessed.
 
 Then state:
 Priority: LOW
@@ -148,6 +171,8 @@ export const CHUNK_EXTRACTION_PROMPT = `You are a preprocessing step for InCheck
 Read only the supplied checklist evidence chunk and extract ALL supported QA / food-safety issue evidence that could matter under the final QA analyst rules. Do not stop after the first few findings.
 
 Focus on:
+- cross-record contradictions in limits, thresholds, tags or control criteria,
+- field/answer semantic mismatches that make a QA record unreliable,
 - failed or negative control answers that actually indicate a problem,
 - out-of-range or critical-limit values,
 - hygiene or contamination concerns,
