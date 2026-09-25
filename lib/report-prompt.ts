@@ -22,11 +22,12 @@ A reported issue must satisfy at least one of these:
 - a recorded value is outside an explicit limit/range stated in the checklist;
 - a defect, hygiene problem, contamination concern, maintenance issue or traceability inconsistency is explicitly recorded;
 - a required corrective action is explicitly missing after a confirmed failure;
-- a material QA control contains no result at all, so that specific control cannot be verified.
+Blank or missing checklist answers are NOT QA findings in this report mode.
+Do not report unverified controls, missing signatures, incomplete checklists, blank scheduled checks, or missing readings as QA issues unless the report contains an actual adverse result tied to them.
+Absence of evidence is not evidence of a QA failure.
 
-If a material control has no result, describe it only as "unverified" or "missing control evidence". Do NOT describe the underlying condition as failed.
-
-If the evidence is ambiguous, do not convert it into an issue. Omit it unless the ambiguity itself creates a material verification problem.
+If the evidence is ambiguous, do not convert it into an issue. Omit it.
+If the available completed/answered checklist evidence contains no direct adverse finding, return "No material QA issues identified within the reviewed checklist evidence."
 
 Before reporting any numeric/temperature issue, calculate the sequence against the exact limit stated in that checklist. Do not infer failure from elapsed time or value order unless the stated limit is actually breached.
 
@@ -53,7 +54,7 @@ Do NOT report any of the following as an issue by itself:
 - Routine administrative closure fields.
 - A checklist being incomplete when the missing content is not relevant to a critical or material control.
 
-Only mention incomplete, late or unsigned work when the missing/late evidence prevents confirmation of a specific material QA or food-safety control, or when the checklist itself explicitly defines timing/sign-off as a critical control requirement.
+Do not mention incomplete, late, unsigned or blank work in the QA issue report. Those belong to workflow/completion monitoring, not this QA findings report.
 
 Example: if a temperature check was completed late but all recorded values are normal and the report provides no rule making the timing itself a critical control, do NOT report "late temperature monitoring" as a management issue.
 
@@ -77,7 +78,7 @@ NOT ASSESSED: insufficient evidence.
 
 Do not assign HIGH merely because a checklist is late, partially done, unsigned, administratively incomplete, or because one material control is unverified.
 Use HIGH only where the supplied evidence supports a significant substantive QA/food-safety/traceability/equipment failure, a breached critical limit, a repeated serious issue, or a confirmed failure without corrective-action evidence.
-An isolated missing material control record is normally MEDIUM unless the checklist itself establishes a higher severity.
+Missing or blank records alone do not receive a QA priority because they are not QA findings in this report mode.
 The rating is a management review priority, not proof of current legal or safety compliance.
 
 REFERENCES
@@ -139,10 +140,11 @@ Focus on:
 - repeated substantive issues.
 
 EVIDENCE THRESHOLD
-Extract a candidate only when there is explicit adverse evidence or a genuinely unverified material QA control.
+Extract a candidate only when there is explicit adverse QA evidence.
+Never extract a candidate solely because a checklist, control, reading, signature or answer is blank, incomplete, late or unverified.
+Absence of data is not a QA finding in this report mode.
 Do not treat ambiguous formatting, a value such as "Submitted", or a blank administrative field as an issue.
 For numeric or temperature records, compare values and elapsed times to the explicit limits stated in that checklist before calling anything a failure.
-If a control has no result, classify it as missing control evidence only; do not claim the underlying condition failed.
 
 Do NOT extract workflow/admin observations by themselves, including:
 - Done On Time,
