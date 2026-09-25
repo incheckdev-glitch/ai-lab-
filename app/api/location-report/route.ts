@@ -59,15 +59,6 @@ async function callOpenAI(instructions: string, inputText: string, maxOutputToke
   return text;
 }
 
-function isPureBlankIncompleteRecord(record: ReportRecord) {
-  const status = (record.instance_status || "").trim().toLowerCase();
-  return (
-    status.includes("partially") &&
-    !record.completion_at_text?.trim() &&
-    !record.submitted_by?.trim()
-  );
-}
-
 function recordBlock(record: ReportRecord, index: number) {
   return [
     `--- DATABASE RECORD ${index + 1} ---`,
@@ -150,14 +141,11 @@ export async function POST(request: NextRequest) {
     );
     const ignoredSlDuplicates = allRecords.length - nonSlRecords.length;
 
-    const analysisRecords = nonSlRecords.filter(
-      (record) => !isPureBlankIncompleteRecord(record),
-    );
-    const ignoredBlankIncomplete = nonSlRecords.length - analysisRecords.length;
+    const analysisRecords = nonSlRecords;
 
     if (!analysisRecords.length) {
       return NextResponse.json(
-        { error: "No answered checklist evidence remains after exclusions." },
+        { error: "All matching records were SL-prefixed duplicates and were excluded from analysis." },
         { status: 404 },
       );
     }
@@ -172,11 +160,11 @@ export async function POST(request: NextRequest) {
       `Location: ${location}`,
       `Requested reporting date: ${reportDate}`,
       `Source file(s): ${sources.map((source) => source.source_filename).join(", ")}`,
-      `Answered checklist instances supplied for QA review: ${analysisRecords.length}`,
+      `Exported checklist entries supplied for review after SL-duplicate exclusion: ${analysisRecords.length}`,
       `Distinct checklist titles supplied: ${reviewedTitles.length}`,
       `Checklist titles in scope: ${reviewedTitles.join(" | ")}`,
       "The database records below were extracted from the original report. [PDF PAGE N] markers are source page references.",
-      "Review the complete supplied scope before finalizing. Do not stop after finding the first issue.",
+      "Review the complete supplied scope before finalizing. Include incomplete/late records when relevant under the analyst instructions.",
     ].join("\n");
 
     const blocks = analysisRecords.map(recordBlock);
@@ -211,13 +199,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const priority = pickEnum(summary, "Priority", ["LOW", "MEDIUM", "HIGH", "NOT ASSESSED"], "NOT ASSESSED");
-    const managementAttention = pickEnum(
+    const priority =
+      pickEnum(summary, "Provisional risk", ["LOW", "MEDIUM", "HIGH", "NOT ASSESSED"], "NOT ASSESSED") !== "NOT ASSESSED"
+        ? pickEnum(summary, "Provisional risk", ["LOW", "MEDIUM", "HIGH", "NOT ASSESSED"], "NOT ASSESSED")
+        : pickEnum(summary, "Priority", ["LOW", "MEDIUM", "HIGH", "NOT ASSESSED"], "NOT ASSESSED");
+
+    const newAttention = pickEnum(
       summary,
-      "Management attention",
+      "Needs attention",
       ["YES", "NO IDENTIFIED NEED", "UNABLE TO DETERMINE"],
       "UNABLE TO DETERMINE",
     );
+    const managementAttention =
+      newAttention !== "UNABLE TO DETERMINE"
+        ? newAttention
+        : pickEnum(
+            summary,
+            "Management attention",
+            ["YES", "NO IDENTIFIED NEED", "UNABLE TO DETERMINE"],
+            "UNABLE TO DETERMINE",
+          );
     const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
 
     const { data: saved, error: saveError } = await supabase
@@ -245,7 +246,6 @@ export async function POST(request: NextRequest) {
       model,
       recordCount: analysisRecords.length,
       ignoredSlDuplicates,
-      ignoredBlankIncomplete,
       chunkCount: chunks.length,
       reportId: saved?.id,
       generatedAt: saved?.generated_at,
